@@ -1,0 +1,2 @@
+#debugging
+npx ndb dist/server.js

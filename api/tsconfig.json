@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+      "target": "ES2019",                   // Target ECMAScript version
+      "module": "CommonJS",                  // Node.js uses CommonJS module system
+      "strict": true,                        // Enable strict type checking
+      "esModuleInterop": true,               // Enables compatibility between ES modules and CommonJS modules
+      "moduleResolution": "node",            // Use Node.js module resolution strategy
+      "skipLibCheck": true,                  // Skip type checking of declaration files
+      "forceConsistentCasingInFileNames": true, // Ensure that file names are correctly cased
+      "outDir": "./dist",                    // Output directory for compiled files
+      "rootDir": "./src",                    // Root directory of source files
+      "resolveJsonModule": true,             // Allow importing JSON files
+      "sourceMap": true                      // Generate source maps for debugging
+    },
+    "include": ["src/**/*"],                 // Include all .ts files in the src directory
+    "exclude": ["node_modules"]              // Exclude the node_modules directory
+  }
+  
