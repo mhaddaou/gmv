@@ -10,9 +10,9 @@ RUN npm install
 COPY . .
 
 # Build the app
-RUN npm run build
+RUN npm run build -p
 
-EXPOSE 4173
+EXPOSE 3000
 
 # Use Vite's built-in preview server
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "4173"]
+CMD ["npm", "run", "preview"]
