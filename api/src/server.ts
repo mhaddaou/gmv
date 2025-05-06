@@ -15,20 +15,17 @@ const stripe = Stripe(
 const app = express();
 app.use(express.json());
 
-// Create a CORS middleware with specific options
-const corsOptions = {
-  origin: ['http://161.97.102.228', 'https://161.97.102.228', 'http://161.97.102.228/api', 'https://gmb.adelphalabs.com'], // Allow specific origins
-  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
+// Enable CORS for all routes
+app.use(cors());
 
-// Enable CORS for all routes with the specified options
-app.use(cors(corsOptions));
-
-// Add OPTIONS handling for preflight requests
-app.options('*', cors(corsOptions));
+// You can also specify CORS options for more fine-grained control
+app.use(
+  cors({
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST", "OPTIONS"], // Allow specific HTTP methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allow specific headers
+  })
+);
 
 //firebase init
 firebase.initializeApp({
@@ -552,14 +549,9 @@ app.post("/forgot-password", async (req, res) => {
 });
 
 // Stripe
-app.get("/create-subscription-link", async (req, res) => {
+app.post("/create-subscription-link", async (req, res) => {
   try {
     const { queriesCount = 1943, email, uid } = req.query;
-
-    // Set CORS headers specifically for this route
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
 
     if (!email || !uid) {
       return res.status(400).json({ error: "Email and UID are required" });
