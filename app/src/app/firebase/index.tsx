@@ -5,13 +5,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";  // Import Firebase Storage
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBtK3xvbj4kvbj-VgtJDwTzgNmI4mJ0vIQ",
-  authDomain: "gmb-builder-65f2e.firebaseapp.com",
-  projectId: "gmb-builder-65f2e",
-  storageBucket: "gmb-builder-65f2e.appspot.com",
-  messagingSenderId: "23608424002",
-  appId: "1:23608424002:web:7292d86adc64b086a35fdb",
-  measurementId: "G-ELJYS7G9KZ",
+  apiKey: "AIzaSyAYRlPT1faKB7GZMsFYdlZvVulNekDJlHQ",
+  authDomain: "test-app-4d8d6.firebaseapp.com",
+  databaseURL: "https://test-app-4d8d6-default-rtdb.firebaseio.com",
+  projectId: "test-app-4d8d6",
+  storageBucket: "test-app-4d8d6.firebasestorage.app",
+  messagingSenderId: "799383664523",
+  appId: "1:799383664523:web:7d000e602d9886ee44618e"
 };
 
 const app = initializeApp(firebaseConfig);
