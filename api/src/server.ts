@@ -40,7 +40,7 @@ const db = firebase.firestore();
 const urlApiPlaces =
   "https://maps.googleapis.com/maps/api/place/textsearch/json";
 const urlApiDetails = "https://maps.googleapis.com/maps/api/place/details/json";
-const apiKey = "AIzaSyDpLPZFmUhsITjymZQlby8OHP0HHu0JsJ0";
+const apiKey = "AIzaSyBd_LRd69IsSN4fF3_3M175mRpV2PbjKX4";
 
 interface ClassApi {
   pageToken: string;
