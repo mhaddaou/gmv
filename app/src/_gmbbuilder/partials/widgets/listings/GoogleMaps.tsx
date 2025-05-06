@@ -32,7 +32,7 @@ const GoogleMapsComponent: React.FC<Props> = ({
     },[latitude,longitude]);
     return (
         <LoadScript
-        googleMapsApiKey="AIzaSyBYUHalEKjZs0r_x_7gUCpdQZ4ex3X-Kic" // Replace with your API key
+        googleMapsApiKey="AIzaSyDpLPZFmUhsITjymZQlby8OHP0HHu0JsJ0" // Replace with your API key
         >
             <GoogleMap
                 mapContainerStyle={containerStyle}
