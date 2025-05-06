@@ -17,7 +17,7 @@ app.use(express.json());
 
 // Create a CORS middleware with specific options
 const corsOptions = {
-  origin: '*', // Allow all origins
+  origin: ['http://161.97.102.228', 'https://161.97.102.228', 'http://161.97.102.228/api', 'https://gmb.adelphalabs.com'], // Allow specific origins
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   credentials: true,
