@@ -9,10 +9,10 @@ const Stripe = require("stripe");
 const cors = require("cors");
 const firebase = require("firebase-admin");
 const nodemailer = require("nodemailer");
-//const stripe = Stripe("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"); // Replace with your Stripe secret key
-const stripe = Stripe(
+const stripe = Stripe("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"); // Replace with your Stripe secret key
+/* const stripe = Stripe(
   "sk_test_51Q9qC2CXXnzEzv7A37tqe65DF4U6H78JD9raYdkc3HBoDMmEbULUO8litXue1WF8meMrvCEfvM2mPtIhUo4MKCJr004Th7OUAb"
-);
+); */
 const app = express();
 app.use(express.json());
 
