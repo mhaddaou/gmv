@@ -3,6 +3,7 @@ import express from "express";
 import { JSDOM } from "jsdom";
 import { ParsedQs } from "qs"; // If you're using the 'qs' package
 import serviceAccount from "./firebase.json";
+import { JWT } from 'google-auth-library';
 
 const Stripe = require("stripe");
 const cors = require("cors");
@@ -15,9 +16,40 @@ const stripe = Stripe(
 const app = express();
 app.use(express.json());
 
+//New Migration of Oauth 2.0
+const SCOPES = [
+  'https://www.googleapis.com/auth/firebase.messaging',
+  'https://www.googleapis.com/auth/places'
+];
+
+const client = new JWT({
+    email: serviceAccount.client_email,
+    key: serviceAccount.private_key,
+    scopes: SCOPES
+});
+
+async function getAccessToken() {
+    try {
+        const tokens = await client.authorize();
+        console.log('Access Token:', tokens.access_token);
+        return tokens.access_token;
+    } catch (error) {
+        console.error('Error getting access token:', error);
+        throw error;
+    }
+}
+
+// Initialize Firebase with the service account
+firebase.initializeApp({
+    credential: firebase.credential.cert(serviceAccount),
+});
+
+// Get Firestore instance
+const db = firebase.firestore();
+
 // Create a CORS middleware with specific options
 const corsOptions = {
-  origin: ['https://gmb-builder.com', 'https://gmb.adelphalabs.com'], // Proper domain format
+  origin: ['https://gmb-builder.com', 'https://gmb.adelphalabs.com',"http://localhost:3000"], // Proper domain format
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   credentials: true,
@@ -29,12 +61,6 @@ app.use(cors(corsOptions));
 
 // Add OPTIONS handling for preflight requests
 app.options('*', cors(corsOptions));
-
-//firebase init
-firebase.initializeApp({
-  credential: firebase.credential.cert(serviceAccount),
-});
-const db = firebase.firestore();
 
 // const urlApiNearby = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
 const urlApiPlaces =
@@ -99,6 +125,9 @@ async function getPlacesApi({
   uid,
 }: ClassApi) {
   try {
+    // Get access token for authentication
+    const accessToken = await getAccessToken();
+
     // Check if the user exists in Firebase Firestore
     const userRef = firebase.firestore().collection("users").doc(uid);
     const userDoc = await userRef.get();
@@ -152,22 +181,30 @@ async function getPlacesApi({
       };
     }
     // Proceed with the API call
-    const response: any = await axios.get(
-      urlApiPlaces +
-        `${
-          !!pageToken
-            ? `?pagetoken=${pageToken}`
-            : `?location=${latitude},${longitude}&radius=${
-                !!radius ? radius : 1500
-              }&query=${!!country ? country + "," : ""}${
-                !!city ? city + "," : ""
-              }${!!state ? state + "," : ""}${!!search ? search + "," : ""}${
-                !!type ? type + "," : ""
-              }`
-        }&key=${apiKey}`
-    );
+    let url = urlApiPlaces;
+    if (pageToken) {
+      url += "?pagetoken=" + pageToken;
+    } else {
+      url += "?location=" + latitude + "," + longitude;
+      url += "&radius=" + (radius ? radius : 1500);
+      url += "&query=";
+      if (country) url += country + ",";
+      if (city) url += city + ",";
+      if (state) url += state + ",";
+      if (search) url += search + ",";
+      if (type) url += type + ",";
+    }
+    url += "&key=" + apiKey;
+    
+    const response: any = await axios.get(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
 
     const dataList = response.data?.results;
+    console.log("dataList", dataList);
     let result: any = [];
 
     if (dataList && dataList.length > 0) {
@@ -218,18 +255,28 @@ async function getPlacesApi({
     return result;
   } catch (error) {
     console.error("🚀 ~ pushDataToClay ~ error:", error);
+    throw error;
   }
 }
 
 async function getDetailsAPi(params: any) {
   try {
+    const accessToken = await getAccessToken();
+    
     const response: any = await axios.get(
-      urlApiDetails + `?place_id=${params?.placeId}&key=${apiKey}`
+      urlApiDetails + "?place_id=" + params?.placeId + "&key=" + apiKey,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
+        }
+      }
     );
 
     return response;
   } catch (error) {
     console.error("🚀 ~ pushDataToClay ~ error:", error);
+    throw error;
   }
 }
 app.get("/getPlaces", async (req, res) => {
