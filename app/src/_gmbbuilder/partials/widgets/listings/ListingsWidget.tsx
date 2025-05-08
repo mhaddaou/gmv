@@ -329,20 +329,46 @@ const ListingsWidget: React.FC<Props> = ({
   }, []);
   useEffect(() => {
     if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setLocation({ lat: latitude, lng: longitude });
-        },
-        (error) => {
-          setError(error.message);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+      // Request permission explicitly for macOS
+      navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
+        if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords;
+              setLocation({ lat: latitude, lng: longitude });
+            },
+            (error) => {
+              console.error("Geolocation error:", error);
+              setError(`Location error: ${error.message}. Please check your browser settings and ensure location services are enabled for this site.`);
+              
+              // Fallback to a default location or prompt user
+              Swal.fire({
+                title: 'Location Access Required',
+                text: 'We need your location to show relevant results. Please enable location services in your browser and system settings.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Try Again',
+                cancelButtonText: 'Use Default Location'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  // Retry getting location
+                  window.location.reload();
+                } else {
+                  // Use default location (example coordinates)
+                  setLocation({ lat: 37.7749, lng: -122.4194 }); // San Francisco as default
+                }
+              });
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 15000,
+              maximumAge: 0,
+            }
+          );
+        } else {
+          setError("Location permission denied. Please enable location services for this site.");
         }
-      );
+      });
     } else {
       setError("Geolocation is not supported by this browser.");
     }
@@ -454,6 +480,7 @@ const ListingsWidget: React.FC<Props> = ({
   // }, [location]);
   useEffect(() => {
     if (isSearch) {
+      console.log("location", location);
       setSelectedExportPlaces([]);
       setSelectedPlaces([]);
       setPlacesIds([]);
