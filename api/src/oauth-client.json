@@ -1,0 +1,10 @@
+{
+  "web": {
+    "client_id": "23608424002-6ql6pihu1at6ga9e7t2r8a48uv0625lb.apps.googleusercontent.com",
+    "project_id": "gmb-builder-65f2e",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "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"
+  }
+}

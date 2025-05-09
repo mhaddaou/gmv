@@ -9,10 +9,10 @@ const Stripe = require("stripe");
 const cors = require("cors");
 const firebase = require("firebase-admin");
 const nodemailer = require("nodemailer");
-const stripe = Stripe("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"); // Replace with your Stripe secret key
-/* const stripe = Stripe(
+//const stripe = Stripe("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"); // Replace with your Stripe secret key
+const stripe = Stripe(
   "sk_test_51Q9qC2CXXnzEzv7A37tqe65DF4U6H78JD9raYdkc3HBoDMmEbULUO8litXue1WF8meMrvCEfvM2mPtIhUo4MKCJr004Th7OUAb"
-); */
+);
 const app = express();
 app.use(express.json());
 
@@ -30,11 +30,26 @@ const client = new JWT({
 
 async function getAccessToken() {
     try {
+        console.log('Attempting to get access token...');
+        console.log('Service Account Email:', serviceAccount.client_email);
+        console.log('Scopes:', SCOPES);
+        
         const tokens = await client.authorize();
-        console.log('Access Token:', tokens.access_token);
+        console.log('Token obtained successfully');
+        console.log('Token type:', tokens.token_type);
+        console.log('Token expires in:', tokens.expiry_date);
+        
+        if (!tokens.access_token) {
+            throw new Error('No access token in response');
+        }
+        
         return tokens.access_token;
-    } catch (error) {
-        console.error('Error getting access token:', error);
+    } catch (error: any) {
+        console.error('Detailed error in getAccessToken:', {
+            message: error?.message || 'Unknown error',
+            code: error?.code || 'No error code',
+            stack: error?.stack || 'No stack trace'
+        });
         throw error;
     }
 }
@@ -112,6 +127,29 @@ function getAddressSeparated(htmlString: string) {
   };
 }
 
+// Add error handling for Firebase operations
+async function verifyFirebaseAuth(uid: string) {
+    try {
+        console.log('Verifying Firebase auth for uid:', uid);
+        const userRef = db.collection("users").doc(uid);
+        const userDoc = await userRef.get();
+        
+        if (!userDoc.exists) {
+            console.log('User document does not exist');
+            throw new Error('User not found');
+        }
+        
+        console.log('User document exists');
+        return true;
+    } catch (error: any) {
+        console.error('Firebase auth error:', {
+            message: error?.message || 'Unknown error',
+            code: error?.code || 'No error code'
+        });
+        throw error;
+    }
+}
+
 async function getPlacesApi({
   pageToken,
   latitude,
@@ -125,27 +163,29 @@ async function getPlacesApi({
   uid,
 }: ClassApi) {
   try {
+    // Verify Firebase auth first
+    await verifyFirebaseAuth(uid);
+    
     // Get access token for authentication
+    console.log('Getting access token for Places API...');
     const accessToken = await getAccessToken();
-
-    // Check if the user exists in Firebase Firestore
-    const userRef = firebase.firestore().collection("users").doc(uid);
-    const userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
-      console.log("User does not exist");
-      return []; // or handle the case when the user does not exist
+    console.log('Access token obtained:', accessToken ? 'Yes' : 'No');
+    
+    if (!accessToken) {
+      throw new Error('Failed to obtain access token');
     }
+
     // Retrieve the payment document with the given uid from Firestore
+    console.log('Checking payment status for uid:', uid);
     const paymentSnapshot = await db
       .collection("payments")
       .where("uid", "==", uid)
       .get();
 
     if (paymentSnapshot.empty) {
+      console.log('No payment found for user');
       return {
-        message:
-          "You need to purchase lifetime access before searching for places!",
+        message: "You need to purchase lifetime access before searching for places!",
       };
     }
 
@@ -196,6 +236,12 @@ async function getPlacesApi({
     }
     url += "&key=" + apiKey;
     
+    console.log('Making Places API request to:', url);
+    console.log('Request headers:', {
+      'Authorization': `Bearer ${accessToken.substring(0, 10)}...`,
+      'Accept': 'application/json'
+    });
+
     const response: any = await axios.get(url, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -203,7 +249,14 @@ async function getPlacesApi({
       }
     });
 
-    const dataList = response.data?.results;
+    console.log('Places API response status:', response.status);
+    console.log('Places API response headers:', response.headers);
+
+    if (!response.data || !response.data.results) {
+      throw new Error('Invalid response from Places API');
+    }
+
+    const dataList = response.data.results;
     console.log("dataList", dataList);
     let result: any = [];
 
@@ -262,6 +315,9 @@ async function getPlacesApi({
 async function getDetailsAPi(params: any) {
   try {
     const accessToken = await getAccessToken();
+    if (!accessToken) {
+      throw new Error('Failed to obtain access token');
+    }
     
     const response: any = await axios.get(
       urlApiDetails + "?place_id=" + params?.placeId + "&key=" + apiKey,
@@ -272,6 +328,10 @@ async function getDetailsAPi(params: any) {
         }
       }
     );
+
+    if (!response.data || !response.data.result) {
+      throw new Error('Invalid response from Places API Details');
+    }
 
     return response;
   } catch (error) {
