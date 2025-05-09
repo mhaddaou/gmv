@@ -3,13 +3,15 @@ import express from "express";
 import { JSDOM } from "jsdom";
 import { ParsedQs } from "qs"; // If you're using the 'qs' package
 import serviceAccount from "./firebase.json";
-import { JWT } from 'google-auth-library';
+import { JWT } from "google-auth-library";
 
 const Stripe = require("stripe");
 const cors = require("cors");
 const firebase = require("firebase-admin");
 const nodemailer = require("nodemailer");
-const stripe = Stripe("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"); // Replace with your Stripe secret key
+const stripe = Stripe(
+  "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"
+); // Replace with your Stripe secret key
 /* const stripe = Stripe(
   "sk_test_51Q9qC2CXXnzEzv7A37tqe65DF4U6H78JD9raYdkc3HBoDMmEbULUO8litXue1WF8meMrvCEfvM2mPtIhUo4MKCJr004Th7OUAb"
 ); */
@@ -18,45 +20,45 @@ app.use(express.json());
 
 //New Migration of Oauth 2.0
 const SCOPES = [
-  'https://www.googleapis.com/auth/firebase.messaging',
-  'https://www.googleapis.com/auth/places'
+  "https://www.googleapis.com/auth/firebase.messaging",
+  "https://www.googleapis.com/auth/places",
 ];
 
 const client = new JWT({
-    email: serviceAccount.client_email,
-    key: serviceAccount.private_key,
-    scopes: SCOPES
+  email: serviceAccount.client_email,
+  key: serviceAccount.private_key,
+  scopes: SCOPES,
 });
 
 async function getAccessToken() {
-    try {
-        console.log('Attempting to get access token...');
-        console.log('Service Account Email:', serviceAccount.client_email);
-        console.log('Scopes:', SCOPES);
-        
-        const tokens = await client.authorize();
-        console.log('Token obtained successfully');
-        console.log('Token type:', tokens.token_type);
-        console.log('Token expires in:', tokens.expiry_date);
-        
-        if (!tokens.access_token) {
-            throw new Error('No access token in response');
-        }
-        
-        return tokens.access_token;
-    } catch (error: any) {
-        console.error('Detailed error in getAccessToken:', {
-            message: error?.message || 'Unknown error',
-            code: error?.code || 'No error code',
-            stack: error?.stack || 'No stack trace'
-        });
-        throw error;
+  try {
+    console.log("Attempting to get access token...");
+    console.log("Service Account Email:", serviceAccount.client_email);
+    console.log("Scopes:", SCOPES);
+
+    const tokens = await client.authorize();
+    console.log("Token obtained successfully");
+    console.log("Token type:", tokens.token_type);
+    console.log("Token expires in:", tokens.expiry_date);
+
+    if (!tokens.access_token) {
+      throw new Error("No access token in response");
     }
+
+    return tokens.access_token;
+  } catch (error: any) {
+    console.error("Detailed error in getAccessToken:", {
+      message: error?.message || "Unknown error",
+      code: error?.code || "No error code",
+      stack: error?.stack || "No stack trace",
+    });
+    throw error;
+  }
 }
 
 // Initialize Firebase with the service account
 firebase.initializeApp({
-    credential: firebase.credential.cert(serviceAccount),
+  credential: firebase.credential.cert(serviceAccount),
 });
 
 // Get Firestore instance
@@ -64,18 +66,27 @@ const db = firebase.firestore();
 
 // Create a CORS middleware with specific options
 const corsOptions = {
-  origin: ['https://gmb-builder.com', 'https://gmb.adelphalabs.com',"http://localhost:3000"], // Proper domain format
-  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  origin: [
+    "https://gmb-builder.com",
+    "https://gmb.adelphalabs.com",
+    "http://localhost:3000",
+  ], // Proper domain format
+  methods: ["GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+  ],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 // Enable CORS for all routes with the specified options
 app.use(cors(corsOptions));
 
 // Add OPTIONS handling for preflight requests
-app.options('*', cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // const urlApiNearby = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
 const urlApiPlaces =
@@ -94,6 +105,7 @@ interface ClassApi {
   state: string;
   search: string;
   uid: string;
+  role: string;
 }
 
 // Utility function to safely cast to string
@@ -129,25 +141,25 @@ function getAddressSeparated(htmlString: string) {
 
 // Add error handling for Firebase operations
 async function verifyFirebaseAuth(uid: string) {
-    try {
-        console.log('Verifying Firebase auth for uid:', uid);
-        const userRef = db.collection("users").doc(uid);
-        const userDoc = await userRef.get();
-        
-        if (!userDoc.exists) {
-            console.log('User document does not exist');
-            throw new Error('User not found');
-        }
-        
-        console.log('User document exists');
-        return true;
-    } catch (error: any) {
-        console.error('Firebase auth error:', {
-            message: error?.message || 'Unknown error',
-            code: error?.code || 'No error code'
-        });
-        throw error;
+  try {
+    console.log("Verifying Firebase auth for uid:", uid);
+    const userRef = db.collection("users").doc(uid);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      console.log("User document does not exist");
+      throw new Error("User not found");
     }
+
+    console.log("User document exists");
+    return true;
+  } catch (error: any) {
+    console.error("Firebase auth error:", {
+      message: error?.message || "Unknown error",
+      code: error?.code || "No error code",
+    });
+    throw error;
+  }
 }
 
 async function getPlacesApi({
@@ -161,46 +173,48 @@ async function getPlacesApi({
   city,
   state,
   uid,
+  role,
 }: ClassApi) {
   try {
     // Verify Firebase auth first
     await verifyFirebaseAuth(uid);
-    
+
     // Get access token for authentication
-    console.log('Getting access token for Places API...');
+    console.log("Getting access token for Places API...");
     const accessToken = await getAccessToken();
-    console.log('Access token obtained:', accessToken ? 'Yes' : 'No');
-    
+    console.log("Access token obtained:", accessToken ? "Yes" : "No");
+
     if (!accessToken) {
-      throw new Error('Failed to obtain access token');
+      throw new Error("Failed to obtain access token");
     }
 
     // Retrieve the payment document with the given uid from Firestore
-    console.log('Checking payment status for uid:', uid);
+    console.log("Checking payment status for uid:", uid);
     const paymentSnapshot = await db
       .collection("payments")
       .where("uid", "==", uid)
       .get();
 
-    if (paymentSnapshot.empty) {
-      console.log('No payment found for user');
+    if (paymentSnapshot.empty && role !== "admin") {
+      console.log("No payment found for user");
       return {
-        message: "You need to purchase lifetime access before searching for places!",
+        message:
+          "You need to purchase lifetime access before searching for places!",
       };
     }
 
     // Assuming each user has only one payment document
-    const paymentDoc = paymentSnapshot.docs[0];
-    const paymentData = paymentDoc.data();
+    const paymentDoc = paymentSnapshot.docs.length > 0 ? paymentSnapshot.docs[0] : null;
+    const paymentData = paymentDoc?.data();
 
     // Check if payment exists and has queriesCount
-    if (!paymentData || !paymentData.queriesCount) {
+    if ((!paymentData || !paymentData?.queriesCount) && role !== "admin") {
       return {
         message: "Invalid payment record.",
       };
     }
 
-    const { queriesCount } = paymentData;
+    const { queriesCount } = paymentData ? paymentData : { queriesCount: 0 };
 
     // For lifetime access, we'll check all-time usage rather than period-based
     const startDate = new Date(0); // Start from Unix epoch
@@ -214,7 +228,7 @@ async function getPlacesApi({
       .get();
     // Assuming you're only interested in the first log (or change this logic as needed)
     const lengthDocs = logSnapshot.docs.length; // If there are multiple logs, you might need to handle this differently
-    if (lengthDocs >= queriesCount) {
+    if (lengthDocs >= queriesCount && role !== "admin") {
       // you have reached the limit
       return {
         message: "Out of queries",
@@ -235,25 +249,25 @@ async function getPlacesApi({
       if (type) url += type + ",";
     }
     url += "&key=" + apiKey;
-    
-    console.log('Making Places API request to:', url);
-    console.log('Request headers:', {
-      'Authorization': `Bearer ${accessToken.substring(0, 10)}...`,
-      'Accept': 'application/json'
+
+    console.log("Making Places API request to:", url);
+    console.log("Request headers:", {
+      Authorization: `Bearer ${accessToken.substring(0, 10)}...`,
+      Accept: "application/json",
     });
 
     const response: any = await axios.get(url, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json'
-      }
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
     });
 
-    console.log('Places API response status:', response.status);
-    console.log('Places API response headers:', response.headers);
+    console.log("Places API response status:", response.status);
+    console.log("Places API response headers:", response.headers);
 
     if (!response.data || !response.data.results) {
-      throw new Error('Invalid response from Places API');
+      throw new Error("Invalid response from Places API");
     }
 
     const dataList = response.data.results;
@@ -316,21 +330,21 @@ async function getDetailsAPi(params: any) {
   try {
     const accessToken = await getAccessToken();
     if (!accessToken) {
-      throw new Error('Failed to obtain access token');
+      throw new Error("Failed to obtain access token");
     }
-    
+
     const response: any = await axios.get(
       urlApiDetails + "?place_id=" + params?.placeId + "&key=" + apiKey,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json'
-        }
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
       }
     );
 
     if (!response.data || !response.data.result) {
-      throw new Error('Invalid response from Places API Details');
+      throw new Error("Invalid response from Places API Details");
     }
 
     return response;
@@ -352,7 +366,24 @@ app.get("/getPlaces", async (req, res) => {
       city: toString(req.query.city), // Optional value
       state: toString(req.query.state), // Optional value
       search: toString(req.query.search), // Optional value
+      role: "",
     };
+
+    const userRecord = await firebase.auth().getUser(classValue.uid);
+    if (!userRecord) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log("Successfully fetched user data:", userRecord.uid);
+
+    // Optionally, you can also get the user's Firestore document for additional data
+    const userDoc = await db.collection("users").doc(classValue.uid).get();
+    if (!userDoc.exists) {
+      console.log("No additional user data found in Firestore");
+    } else {
+      console.log("User Firestore data retrieved successfully");
+    }
+
+    const userData = userDoc.data();
 
     // Fetch the payment record for the given UID
     const paymentQuerySnapshot = await db
@@ -361,33 +392,47 @@ app.get("/getPlaces", async (req, res) => {
       .limit(1)
       .get();
 
-    if (paymentQuerySnapshot.empty) {
+    if (
+      paymentQuerySnapshot != null &&
+      paymentQuerySnapshot.docs.length === 0 &&
+      (userData?.role !== "admin" || !!userData?.role === false)
+    ) {
       return res
         .status(404)
         .json({ error: "No payment record found for the given UID." });
     }
 
-    const paymentDoc = paymentQuerySnapshot.docs[0];
-    const paymentData = paymentDoc.data();
+    const paymentDoc =
+      paymentQuerySnapshot.docs.length > 0
+        ? paymentQuerySnapshot.docs[0]
+        : null;
+    const paymentData = paymentDoc?.data();
 
     // Retrieve the subscription details from Stripe
     // Check if payment data exists and has queriesCount for lifetime access
-    if (!paymentData || !paymentData.queriesCount) {
-      return res.status(400).json({ message: "Invalid payment record." });
+    if (
+      (!paymentData || !paymentData?.queriesCount) &&
+      (userData?.role !== "admin" || !!userData?.role === false)
+    ) {
+      return res.status(400).json({
+        message: "Invalid payment record.",
+        status: "inactive",
+      });
     }
 
     // For lifetime access, no need to check subscription status
-    if (paymentData.type === "lifetime") {
+    if (paymentData?.type === "lifetime") {
       // Continue with lifetime access
     }
 
     // Check the subscription status
-    const paymentStatus = paymentData.status || "inactive"; // E.g., 'active', 'incomplete', 'past_due', 'canceled', 'unpaid'
+    const paymentStatus = paymentData?.status || "inactive"; // E.g., 'active', 'incomplete', 'past_due', 'canceled', 'unpaid'
 
     // Check if the subscription was canceled during the free trial
     if (
+      !!paymentStatus &&
       paymentStatus !== "active" &&
-      classValue.uid !== "TES2Ev5yDmM1iYva49OmBzhvOh03"
+      (userData?.role !== "admin" || !!userData?.role === false)
     ) {
       return res.status(400).json({
         message:
@@ -395,14 +440,19 @@ app.get("/getPlaces", async (req, res) => {
         status: "inactive",
       });
     }
-    const resApi = await getPlacesApi(classValue);
+    const resApi = await getPlacesApi({
+      ...classValue,
+      role: userData?.role,
+    });
 
     // Increment the queriesConsumed field
-    const newQueriesConsumed = (paymentData.queriesConsumed || 0) + 1;
+    const newQueriesConsumed = (paymentData?.queriesConsumed || 0) + 1;
 
-    await db.collection("payments").doc(paymentDoc.id).update({
-      queriesConsumed: newQueriesConsumed,
-    });
+    if (!!paymentDoc) {
+      await db.collection("payments").doc(paymentDoc?.uid).update({
+        queriesConsumed: newQueriesConsumed,
+      });
+    }
 
     //return data
     return res.status(200).json({
