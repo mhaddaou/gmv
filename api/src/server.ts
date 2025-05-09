@@ -66,7 +66,7 @@ app.options("*", cors(corsOptions));
 const urlApiPlaces =
   "https://maps.googleapis.com/maps/api/place/textsearch/json";
 const urlApiDetails = "https://maps.googleapis.com/maps/api/place/details/json";
-const apiKey = "AIzaSyDpLPZFmUhsITjymZQlby8OHP0HHu0JsJ0";
+const apiKey = "AIzaSyCoUrJ2TuKstzD9Wnxuan2IA6WbQdyMWDo";
 
 interface ClassApi {
   pageToken: string;
