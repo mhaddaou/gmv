@@ -30,31 +30,6 @@ const client = new JWT({
   scopes: SCOPES,
 });
 
-async function getAccessToken() {
-  try {
-    console.log("Attempting to get access token...");
-    console.log("Service Account Email:", serviceAccount.client_email);
-    console.log("Scopes:", SCOPES);
-
-    const tokens = await client.authorize();
-    console.log("Token obtained successfully");
-    console.log("Token type:", tokens.token_type);
-    console.log("Token expires in:", tokens.expiry_date);
-
-    if (!tokens.access_token) {
-      throw new Error("No access token in response");
-    }
-
-    return tokens.access_token;
-  } catch (error: any) {
-    console.error("Detailed error in getAccessToken:", {
-      message: error?.message || "Unknown error",
-      code: error?.code || "No error code",
-      stack: error?.stack || "No stack trace",
-    });
-    throw error;
-  }
-}
 
 // Initialize Firebase with the service account
 firebase.initializeApp({
@@ -178,15 +153,6 @@ async function getPlacesApi({
   try {
     // Verify Firebase auth first
     await verifyFirebaseAuth(uid);
-
-    // Get access token for authentication
-    console.log("Getting access token for Places API...");
-    const accessToken = await getAccessToken();
-    console.log("Access token obtained:", accessToken ? "Yes" : "No");
-
-    if (!accessToken) {
-      throw new Error("Failed to obtain access token");
-    }
 
     // Retrieve the payment document with the given uid from Firestore
     console.log("Checking payment status for uid:", uid);
