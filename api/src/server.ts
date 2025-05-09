@@ -697,8 +697,8 @@ app.post("/create-subscription-link", async (req, res) => {
       ],
       mode: "payment",
       customer_email: email.toString().replace(" ", "+"),
-      success_url: `https://gmb.adelphalabs.com/payment-success?uid=${uid}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: "https://gmb.adelphalabs.com/auth/login",
+      success_url: `https://gmb-builder.com/payment-success?uid=${uid}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: "https://gmb-builder.com/auth/login",
     });
     console.log("Checkout session created:", session.id);
 
