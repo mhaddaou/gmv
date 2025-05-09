@@ -30,7 +30,6 @@ const client = new JWT({
   scopes: SCOPES,
 });
 
-
 // Initialize Firebase with the service account
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
@@ -170,7 +169,8 @@ async function getPlacesApi({
     }
 
     // Assuming each user has only one payment document
-    const paymentDoc = paymentSnapshot.docs.length > 0 ? paymentSnapshot.docs[0] : null;
+    const paymentDoc =
+      paymentSnapshot.docs.length > 0 ? paymentSnapshot.docs[0] : null;
     const paymentData = paymentDoc?.data();
 
     // Check if payment exists and has queriesCount
@@ -216,18 +216,7 @@ async function getPlacesApi({
     }
     url += "&key=" + apiKey;
 
-    console.log("Making Places API request to:", url);
-    console.log("Request headers:", {
-      Authorization: `Bearer ${accessToken.substring(0, 10)}...`,
-      Accept: "application/json",
-    });
-
-    const response: any = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
-      },
-    });
+    const response: any = await axios.get(url);
 
     console.log("Places API response status:", response.status);
     console.log("Places API response headers:", response.headers);
@@ -294,19 +283,8 @@ async function getPlacesApi({
 
 async function getDetailsAPi(params: any) {
   try {
-    const accessToken = await getAccessToken();
-    if (!accessToken) {
-      throw new Error("Failed to obtain access token");
-    }
-
     const response: any = await axios.get(
-      urlApiDetails + "?place_id=" + params?.placeId + "&key=" + apiKey,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json",
-        },
-      }
+      urlApiDetails + "?place_id=" + params?.placeId + "&key=" + apiKey
     );
 
     if (!response.data || !response.data.result) {
