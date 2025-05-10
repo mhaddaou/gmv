@@ -21,6 +21,8 @@ services:
       - "6465:6465"
     networks:
       - app-network
+      
+    command: ["node", "dist/main.js"]
 
   caddy:
     image: caddy:latest
