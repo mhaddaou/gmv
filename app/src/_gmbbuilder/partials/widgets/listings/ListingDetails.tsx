@@ -166,7 +166,7 @@ const ListingDetailsWidget: React.FC = () => {
         ""
       );
       // Build the API URL based on whether we have a pageToken or not
-      const apiUrl = `${urlApi}/getDetails?placeId=${placeId}`;
+      const apiUrl = `${urlApi}/places/getDetails?placeId=${placeId}`;
 
       const response = await axios.get(apiUrl);
 
@@ -238,7 +238,7 @@ const ListingDetailsWidget: React.FC = () => {
   const getPhotoUrl = async (photoReference: string, maxWidth: string) => {
     try {
       const response = await axios.get(
-        `${urlApi}/getPhotoUrl?photo_reference=${photoReference}&maxwidth=${maxWidth}`
+        `${urlApi}/places/getPhotoUrl?photo_reference=${photoReference}&maxwidth=${maxWidth}`
       );
 
       return response?.data?.photoUrl;

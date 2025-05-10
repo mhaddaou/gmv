@@ -69,7 +69,7 @@ const SearchWidget: React.FC<Props> = ({
   };
 
   const GetCountries = () => {
-    axios
+/*     axios
       .get(
         `${API_URL}/countries`,
         {
@@ -84,7 +84,7 @@ const SearchWidget: React.FC<Props> = ({
       .catch((error: any) => {
       })
       .finally(() => {
-      });
+      }); */
   };
   const GetStates = (code: any) => {
     axios
@@ -124,7 +124,7 @@ const SearchWidget: React.FC<Props> = ({
   };
 
   const GetCategories = () => {
-    axios
+/*     axios
       .get(
         `${API_URL}/categories`,
         {
@@ -139,7 +139,7 @@ const SearchWidget: React.FC<Props> = ({
       .catch((error: any) => {
       })
       .finally(() => {
-      });
+      }); */
   };
   useEffect(() => {
     GetCountries()
