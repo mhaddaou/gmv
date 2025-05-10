@@ -1,20 +1,19 @@
-import { useState, useEffect } from "react";
-import { useFormik } from "formik";
-import * as Yup from "yup";
+import axios from "axios";
 import clsx from "clsx";
-import { getUserByToken, register } from "../core/_requests";
+import { useFormik } from "formik";
+import { useEffect, useState } from "react";
+import { Col, Modal, Row } from "react-bootstrap";
+import SVG from "react-inlinesvg";
 import { Link, useNavigate } from "react-router-dom";
-import { toAbsoluteUrl } from "../../../../_gmbbuilder/helpers";
+import { toast } from "react-toastify";
+import * as Yup from "yup";
 import { PasswordMeterComponent } from "../../../../_gmbbuilder/assets/ts/components";
-import { useAuth } from "../core/Auth";
+import { toAbsoluteUrl } from "../../../../_gmbbuilder/helpers";
 import {
   ApiAuth,
   registerWithEmailAndPassword,
 } from "../../../firebase/functions";
-import { Col, Modal, Row } from "react-bootstrap";
-import axios from "axios";
-import Swal from "sweetalert2";
-import { toast } from "react-toastify";
+import { useAuth } from "../core/Auth";
 
 const initialValues = {
   firstname: "",
@@ -59,30 +58,27 @@ export function Registration() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const { saveAuth, setCurrentUser } = useAuth();
-  const [showTerms, setShowTerms] = useState(false)
-  const handleCloseTerms = () => setShowTerms(false)
-  const handleShowTerms = () => setShowTerms(true)
+  const [showTerms, setShowTerms] = useState(false);
+  const handleCloseTerms = () => setShowTerms(false);
+  const handleShowTerms = () => setShowTerms(true);
   const [isPaymentSent, setIsPaymentSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [TermsContent, setTermsContent] = useState(false)
-
+  const [TermsContent, setTermsContent] = useState(false);
+  const [isShowPassword, setIsShowPassword] = useState(false);
+  const [isShowChangePassword, setIsShowChangePassword] = useState(false);
   const handleImportContacts = () => {
     setIsLoading(true);
     axios
-      .get(
-        `${API_URL}/terms`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      )
+      .get(`${API_URL}/location/terms`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
       .then((response: any) => {
-        console.log(response?.data?.value)
-        setTermsContent(response?.data?.value?.replace(/\\n/g, "\n"))
+        console.log(response?.data?.value);
+        setTermsContent(response?.data?.value?.replace(/\\n/g, "\n"));
       })
-      .catch((error: any) => {
-      })
+      .catch((error: any) => {})
       .finally(() => {
         setIsLoading(false);
       });
@@ -91,7 +87,7 @@ export function Registration() {
   const fetchLinkPayment = (email: string, uid: string) => {
     axios
       .post(
-        `${API_URL}/create-subscription-link?email=${email}&uid=${uid}`,
+        `${API_URL}/payment/create-subscription-link?email=${email}&uid=${uid}`,
         {},
         {
           headers: {
@@ -113,8 +109,8 @@ export function Registration() {
         console.error("Error fetching payment link:", error);
       });
   };
-  
-  const postEmailSuccess = async (data:any) => {
+
+  const postEmailSuccess = async (data: any) => {
     await axios
       .post(`${API_URL}/send-email`, data, {
         headers: {
@@ -125,7 +121,9 @@ export function Registration() {
       .catch((error: any) => {})
       .finally(() => {});
   };
-  useEffect(()=>{handleImportContacts()},[])
+  useEffect(() => {
+    handleImportContacts();
+  }, []);
   const formik = useFormik({
     initialValues,
     validationSchema: registrationSchema,
@@ -140,20 +138,20 @@ export function Registration() {
           profilePicture: "",
         };
         var user = await registerWithEmailAndPassword(data);
-        if(!!user.user.uid){
+        if (!!user.user.uid) {
           await postEmailSuccess({
             email: values.email,
             firstName: values.firstname,
             lastName: values.lastname,
           });
           setSubmitting(false);
-          setLoading(false);  
+          setLoading(false);
           toast.success("Your account has been registered successfully");
           navigate("/auth/login");
-        }else {
+        } else {
           toast.error("Error occurred, please try again");
           setSubmitting(false);
-          setLoading(false);  
+          setLoading(false);
         }
       } catch (error) {
         console.error(error);
@@ -270,23 +268,32 @@ export function Registration() {
         <div className="fv-row mb-8" data-kt-password-meter="true">
           <div className="mb-1">
             <div className="position-relative mb-3">
-              <input
-                type="password"
-                placeholder="Password"
-                autoComplete="off"
-                {...formik.getFieldProps("password")}
-                className={clsx(
-                  "form-control bg-transparent",
-                  {
-                    "is-invalid":
-                      formik.touched.password && formik.errors.password,
-                  },
-                  {
-                    "is-valid":
-                      formik.touched.password && !formik.errors.password,
-                  }
-                )}
-              />
+              <div className="input-group">
+                <input
+                  type={isShowPassword ? "text" : "password"}
+                  placeholder="Password"
+                  autoComplete="off"
+                  {...formik.getFieldProps("password")}
+                  className={clsx("form-control bg-transparent")}
+                />
+                <span
+                  style={{ zIndex: "222" }}
+                  className="eyePassword align-self-center cursor-pointer bg-transparent ms-1"
+                  onClick={(e) => setIsShowPassword(!isShowPassword)}
+                >
+                  {!isShowPassword ? (
+                    <SVG
+                      src={toAbsoluteUrl("media/svg/settings/eye-solid.svg")}
+                    />
+                  ) : (
+                    <SVG
+                      src={toAbsoluteUrl(
+                        "media/svg/settings/eye-slash-solid.svg"
+                      )}
+                    />
+                  )}
+                </span>
+              </div>
               {formik.touched.password && formik.errors.password && (
                 <div className="fv-plugins-message-container">
                   <div className="fv-help-block">
@@ -315,24 +322,28 @@ export function Registration() {
 
         {/* begin::Form group Confirm password */}
         <div className="fv-row mb-5">
-          <input
-            type="password"
-            placeholder="Password confirmation"
-            autoComplete="off"
-            {...formik.getFieldProps("changepassword")}
-            className={clsx(
-              "form-control bg-transparent",
-              {
-                "is-invalid":
-                  formik.touched.changepassword && formik.errors.changepassword,
-              },
-              {
-                "is-valid":
-                  formik.touched.changepassword &&
-                  !formik.errors.changepassword,
-              }
-            )}
-          />
+          <div className="input-group">
+            <input
+              type={isShowChangePassword ? "text" : "password"}
+              placeholder="Confirm password"
+              autoComplete="off"
+              {...formik.getFieldProps("changepassword")}
+              className={clsx("form-control bg-transparent")}
+            />
+            <span
+              style={{ zIndex: "222" }}
+              className="eyePassword align-self-center cursor-pointer bg-transparent ms-1"
+              onClick={(e) => setIsShowChangePassword(!isShowChangePassword)}
+            >
+              {!isShowChangePassword ? (
+                <SVG src={toAbsoluteUrl("media/svg/settings/eye-solid.svg")} />
+              ) : (
+                <SVG
+                  src={toAbsoluteUrl("media/svg/settings/eye-slash-solid.svg")}
+                />
+              )}
+            </span>
+          </div>
           {formik.touched.changepassword && formik.errors.changepassword && (
             <div className="fv-plugins-message-container">
               <div className="fv-help-block">

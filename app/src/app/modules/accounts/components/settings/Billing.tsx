@@ -14,7 +14,7 @@ export function Billing() {
   const fetchLinkPayment = (uid: string) => {
     axios
       .post(
-        `${API_URL}/check-payment`,
+        `${API_URL}/payment/check-payment`,
         {
           uid: uid,
         },

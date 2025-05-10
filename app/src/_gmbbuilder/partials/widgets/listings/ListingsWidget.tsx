@@ -328,56 +328,59 @@ const ListingsWidget: React.FC<Props> = ({
     GetCheckConnect();
   }, []);
   useEffect(() => {
+    // Check if we already have location data to avoid unnecessary prompts
+    if (location?.lat && location?.lng) {
+      return; // Skip geolocation request if we already have coordinates
+    }
+
     if ("geolocation" in navigator) {
       // Request permission explicitly for macOS
-      navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
-        if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const { latitude, longitude } = position.coords;
-              setLocation({ lat: latitude, lng: longitude });
-            },
-            (error) => {
-              console.error("Geolocation error:", error);
-              setError(`Location error: ${error.message}. Please check your browser settings and ensure location services are enabled for this site.`);
-              
-              // Fallback to a default location or prompt user
-              Swal.fire({
-                title: 'Location Access Required',
-                text: 'We need your location to show relevant results. Please enable location services in your browser and system settings.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Try Again',
-                cancelButtonText: 'Use Default Location'
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  // Retry getting location
-                  window.location.reload();
-                } else {
-                  // Use default location (example coordinates)
-                  setLocation({ lat: 37.7749, lng: -122.4194 }); // San Francisco as default
-                }
-              });
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 15000,
-              maximumAge: 0,
-            }
-          );
-        } else {
-          setError("Location permission denied. Please enable location services for this site.");
-        }
-      });
+      navigator.permissions
+        .query({ name: "geolocation" })
+        .then((permissionStatus) => {
+          if (
+            permissionStatus.state === "granted" ||
+            permissionStatus.state === "prompt"
+          ) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const { latitude, longitude } = position.coords;
+                setLocation({ lat: latitude, lng: longitude });
+              },
+              (error) => {
+                console.error("Geolocation error:", error);
+                setError(
+                  `Location error: ${error.message}. Please check your browser settings and ensure location services are enabled for this site.`
+                );
+                
+                // Use default location without showing the Swal dialog
+                setLocation({ lat: 37.7749, lng: -122.4194 }); // San Francisco as default
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0,
+              }
+            );
+          } else {
+            setError(
+              "Location permission denied. Using default location instead."
+            );
+            // Set default location when permission is denied
+            setLocation({ lat: 37.7749, lng: -122.4194 }); // San Francisco as default
+          }
+        });
     } else {
-      setError("Geolocation is not supported by this browser.");
+      setError("Geolocation is not supported by this browser. Using default location.");
+      // Set default location when geolocation is not supported
+      setLocation({ lat: 37.7749, lng: -122.4194 }); // San Francisco as default
     }
   }, []);
 
   const getDetails = async (placeId: string) => {
     try {
       // Build the API URL based on whether we have a pageToken or not
-      const apiUrl = `${urlApi}/getDetails?placeId=${placeId}`;
+      const apiUrl = `${urlApi}/places/getDetails?placeId=${placeId}`;
 
       const response = await axios.get(apiUrl);
 
@@ -397,7 +400,7 @@ const ListingsWidget: React.FC<Props> = ({
     try {
       // Build the API URL based on whether we have a pageToken or not
       const apiUrl =
-        `${urlApi}/getPlaces` +
+        `${urlApi}/places/getPlaces` +
         (!!data?.next_page_token && !!isViewMore
           ? `?pagetoken=${data?.next_page_token}`
           : `?uid=${uid}&latitude=${location?.lat}&longitude=${
@@ -405,7 +408,33 @@ const ListingsWidget: React.FC<Props> = ({
             }&search=${keyWord}&type=${type?.toLowerCase()}&country=${Country}&state=${StateRegion}&city=${CityArea}`);
 
       const response = await axios.get(apiUrl);
-      if (response?.data?.data) {
+      console.log("response", response);
+      if (
+        response?.data?.data?.length === 0 ||
+        !!response?.data?.data?.length === false
+      ) {
+        setLoading(false);
+        if (response?.data?.status === "not-paid") {
+          Swal.fire({
+            title: "Subscription Required",
+            text: "Please subscribe to continue using this feature",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Go to Billing",
+            cancelButtonText: "Cancel",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              navigate("/account/billing");
+            }
+          });
+        } else {
+          Swal.fire({
+            title: "No results found",
+            text: "Please try again with different search criteria",
+            icon: "warning",
+          });
+        }
+      } else if (response?.data?.data) {
         setData((prevData: any) => {
           // If it's a new request (no pageToken), replace the old data
           // If it's a paginated request (with pageToken), merge the new data with the old
@@ -461,7 +490,7 @@ const ListingsWidget: React.FC<Props> = ({
   const getPhotoUrl = async (photoReference: string, maxWidth: string) => {
     try {
       const response = await axios.get(
-        `${urlApi}/getPhotoUrl?photo_reference=${photoReference}&maxwidth=${maxWidth}`
+        `${urlApi}/places/getPhotoUrl?photo_reference=${photoReference}&maxwidth=${maxWidth}`
       );
 
       return response?.data?.photoUrl;
